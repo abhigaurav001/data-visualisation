@@ -1,0 +1,549 @@
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>PULSE — Live Sales Ops</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0d13;
+    --panel:#11151d;
+    --panel-2:#161b25;
+    --line:#222837;
+    --text:#e7eaf1;
+    --muted:#7c879c;
+    --amber:#ffb454;
+    --teal:#33d9b2;
+    --red:#ff5c6c;
+    --violet:#9d8cff;
+    --radius:10px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background:
+      radial-gradient(1200px 600px at 90% -10%, rgba(157,140,255,0.07), transparent 60%),
+      radial-gradient(900px 500px at 0% 0%, rgba(51,217,178,0.06), transparent 60%),
+      var(--bg);
+    color:var(--text);
+    font-family:'Inter', sans-serif;
+    min-height:100vh;
+    padding:22px;
+    background-attachment:fixed;
+  }
+  .mono{font-family:'JetBrains Mono', monospace;}
+  .disp{font-family:'Space Grotesk', sans-serif;}
+
+  /* ===== Top bar ===== */
+  .topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 20px; margin-bottom:18px;
+    background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+  }
+  .brand{display:flex; align-items:center; gap:12px;}
+  .brand-mark{
+    width:34px; height:34px; border-radius:8px;
+    background:linear-gradient(135deg, var(--teal), var(--violet));
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Space Grotesk'; font-weight:700; color:#0a0d13; font-size:15px;
+  }
+  .brand h1{font-family:'Space Grotesk'; font-size:18px; font-weight:600; letter-spacing:0.5px;}
+  .brand span{color:var(--muted); font-size:12px; display:block; margin-top:1px;}
+  .top-right{display:flex; align-items:center; gap:22px;}
+  .live-pill{
+    display:flex; align-items:center; gap:7px; padding:6px 12px;
+    background:rgba(255,92,108,0.1); border:1px solid rgba(255,92,108,0.35); border-radius:20px;
+    font-size:12px; font-weight:600; letter-spacing:1px; color:var(--red);
+  }
+  .live-dot{width:7px; height:7px; border-radius:50%; background:var(--red); animation:pulse 1.4s infinite;}
+  @keyframes pulse{0%,100%{opacity:1; box-shadow:0 0 0 0 rgba(255,92,108,0.6);} 50%{opacity:0.5; box-shadow:0 0 0 5px rgba(255,92,108,0);}}
+  .clock{font-size:13px; color:var(--muted);}
+  .clock b{color:var(--text); font-weight:600;}
+  .export-btns{display:flex; gap:8px;}
+  .btn{
+    font-family:'Inter'; font-size:12.5px; font-weight:600; color:var(--text);
+    background:var(--panel-2); border:1px solid var(--line); border-radius:7px;
+    padding:8px 13px; cursor:pointer; transition:all .15s ease;
+    display:flex; align-items:center; gap:6px;
+  }
+  .btn:hover{border-color:var(--teal); color:var(--teal); transform:translateY(-1px);}
+  .btn.primary{background:rgba(51,217,178,0.12); border-color:rgba(51,217,178,0.4); color:var(--teal);}
+
+  /* ===== Ticker ===== */
+  .ticker{
+    overflow:hidden; white-space:nowrap; background:var(--panel);
+    border:1px solid var(--line); border-radius:var(--radius);
+    margin-bottom:18px; padding:9px 0; position:relative;
+  }
+  .ticker::before, .ticker::after{
+    content:""; position:absolute; top:0; bottom:0; width:60px; z-index:2;
+  }
+  .ticker::before{left:0; background:linear-gradient(90deg, var(--panel), transparent);}
+  .ticker::after{right:0; background:linear-gradient(270deg, var(--panel), transparent);}
+  .ticker-track{display:inline-block; animation:scroll 38s linear infinite;}
+  @keyframes scroll{from{transform:translateX(0);} to{transform:translateX(-50%);}}
+  .tick-item{display:inline-flex; align-items:center; gap:8px; padding:0 22px; font-size:12.5px;}
+  .tick-item .id{color:var(--muted);}
+  .tick-item .amt{font-weight:700;}
+  .up{color:var(--teal);} .down{color:var(--red);}
+
+  /* ===== Stat cards ===== */
+  .stats{display:grid; grid-template-columns:repeat(4, 1fr); gap:14px; margin-bottom:18px;}
+  .stat-card{
+    background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+    padding:18px 20px; position:relative; overflow:hidden;
+  }
+  .stat-card::before{
+    content:""; position:absolute; left:0; top:0; bottom:0; width:3px;
+  }
+  .stat-card.c1::before{background:var(--teal);} .stat-card.c2::before{background:var(--amber);}
+  .stat-card.c3::before{background:var(--violet);} .stat-card.c4::before{background:var(--red);}
+  .stat-label{font-size:11.5px; color:var(--muted); letter-spacing:0.6px; text-transform:uppercase; margin-bottom:8px;}
+  .stat-value{font-family:'Space Grotesk'; font-size:27px; font-weight:700;}
+  .stat-delta{font-size:12px; margin-top:6px; font-weight:600;}
+
+  /* ===== Grid layout ===== */
+  .grid{display:grid; grid-template-columns:1.6fr 1fr; gap:14px; margin-bottom:14px;}
+  .panel{
+    background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+    padding:18px 20px;
+  }
+  .panel-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;}
+  .panel-title{font-family:'Space Grotesk'; font-size:14.5px; font-weight:600;}
+  .panel-sub{font-size:11px; color:var(--muted); margin-top:2px;}
+  .chart-wrap{height:240px;}
+  .chart-wrap.small{height:210px;}
+
+  .row2{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;}
+
+  /* legend chips */
+  .legend-row{display:flex; gap:14px; flex-wrap:wrap; margin-top:10px;}
+  .legend-chip{display:flex; align-items:center; gap:6px; font-size:11.5px; color:var(--muted);}
+  .dot{width:8px; height:8px; border-radius:2px;}
+
+  /* table */
+  table{width:100%; border-collapse:collapse; font-size:12.5px;}
+  thead th{
+    text-align:left; color:var(--muted); font-weight:600; font-size:11px;
+    text-transform:uppercase; letter-spacing:0.5px; padding:8px 10px; border-bottom:1px solid var(--line);
+  }
+  tbody td{padding:9px 10px; border-bottom:1px solid rgba(255,255,255,0.04);}
+  tbody tr:hover{background:rgba(255,255,255,0.02);}
+  .badge{
+    padding:2px 8px; border-radius:5px; font-size:10.5px; font-weight:600;
+  }
+  .badge.ok{background:rgba(51,217,178,0.12); color:var(--teal);}
+  .badge.pend{background:rgba(255,180,84,0.12); color:var(--amber);}
+  .badge.fail{background:rgba(255,92,108,0.12); color:var(--red);}
+
+  .footer-note{
+    text-align:center; font-size:11px; color:var(--muted); margin-top:6px; padding:10px;
+  }
+
+  @media(max-width:900px){
+    .stats{grid-template-columns:repeat(2,1fr);}
+    .grid, .row2{grid-template-columns:1fr;}
+    .topbar{flex-direction:column; gap:10px; align-items:flex-start;}
+  }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-mark">P</div>
+      <div>
+        <h1>PULSE</h1>
+        <span>Live Sales Operations Dashboard</span>
+      </div>
+    </div>
+    <div class="top-right">
+      <div class="clock mono">SYS TIME <b id="clockTxt">--:--:--</b></div>
+      <div class="live-pill"><span class="live-dot"></span>LIVE</div>
+      <div class="export-btns">
+        <button class="btn" id="exportJson">⤓ JSON</button>
+        <button class="btn primary" id="exportCsv">⤓ Export CSV</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="ticker">
+    <div class="ticker-track mono" id="tickerTrack"></div>
+  </div>
+
+  <div class="stats">
+    <div class="stat-card c1">
+      <div class="stat-label">Revenue (today)</div>
+      <div class="stat-value mono" id="statRevenue">$0</div>
+      <div class="stat-delta up" id="statRevenueDelta">+0.0%</div>
+    </div>
+    <div class="stat-card c2">
+      <div class="stat-label">Orders</div>
+      <div class="stat-value mono" id="statOrders">0</div>
+      <div class="stat-delta up" id="statOrdersDelta">+0.0%</div>
+    </div>
+    <div class="stat-card c3">
+      <div class="stat-label">Avg Order Value</div>
+      <div class="stat-value mono" id="statAov">$0</div>
+      <div class="stat-delta" id="statAovDelta">+0.0%</div>
+    </div>
+    <div class="stat-card c4">
+      <div class="stat-label">Conversion Rate</div>
+      <div class="stat-value mono" id="statConv">0.0%</div>
+      <div class="stat-delta down" id="statConvDelta">-0.0%</div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="panel">
+      <div class="panel-head">
+        <div>
+          <div class="panel-title">Revenue Stream</div>
+          <div class="panel-sub">Rolling 60-second window · updates every 2s</div>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="revenueChart"></canvas></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head">
+        <div>
+          <div class="panel-title">Region Split</div>
+          <div class="panel-sub">Share of live order volume</div>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="regionChart"></canvas></div>
+      <div class="legend-row" id="regionLegend"></div>
+    </div>
+  </div>
+
+  <div class="row2">
+    <div class="panel">
+      <div class="panel-head">
+        <div>
+          <div class="panel-title">Sales by Category</div>
+          <div class="panel-sub">Units sold, current session</div>
+        </div>
+      </div>
+      <div class="chart-wrap small"><canvas id="categoryChart"></canvas></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head">
+        <div>
+          <div class="panel-title">Order Status Mix</div>
+          <div class="panel-sub">Fulfilled vs pending vs failed</div>
+        </div>
+      </div>
+      <div class="chart-wrap small"><canvas id="statusChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <div>
+        <div class="panel-title">Transaction Report</div>
+        <div class="panel-sub">Most recent 8 transactions</div>
+      </div>
+    </div>
+    <table>
+      <thead>
+        <tr><th>Order ID</th><th>Region</th><th>Category</th><th>Amount</th><th>Status</th><th>Time</th></tr>
+      </thead>
+      <tbody id="reportBody"></tbody>
+    </table>
+  </div>
+
+  <div class="footer-note">Synthetic data stream styled after Kaggle e-commerce sales datasets · generated client-side · refreshes every 2s</div>
+
+<script>
+/* ============ DATA MODEL ============ */
+const CATEGORIES = ["Electronics","Apparel","Home & Garden","Sports","Beauty","Toys","Books","Grocery"];
+const REGIONS = [
+  {name:"North America", color:"#33d9b2"},
+  {name:"Europe", color:"#9d8cff"},
+  {name:"Asia Pacific", color:"#ffb454"},
+  {name:"Latin America", color:"#ff5c6c"},
+  {name:"MEA", color:"#5da9ff"}
+];
+const STATUS = ["Fulfilled","Pending","Failed"];
+
+let totalRevenue = 48210;
+let totalOrders = 612;
+let prevRevenue = totalRevenue;
+let prevOrders = totalOrders;
+let conv = 3.8;
+
+let revenueHistory = Array.from({length:30}, (_,i)=> 1400 + Math.random()*600);
+let revenueLabels = Array.from({length:30}, (_,i)=> i);
+
+let categoryCounts = Object.fromEntries(CATEGORIES.map(c=>[c, Math.floor(80+Math.random()*200)]));
+let regionCounts = Object.fromEntries(REGIONS.map(r=>[r.name, Math.floor(50+Math.random()*150)]));
+let statusCounts = {Fulfilled: 420, Pending: 140, Failed: 38};
+
+let allTransactions = [];
+let reportRows = [];
+
+function rand(min,max){ return Math.random()*(max-min)+min; }
+function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+function fmtMoney(n){ return "$" + n.toLocaleString(undefined,{maximumFractionDigits:0}); }
+function fmtTime(d){ return d.toLocaleTimeString([], {hour12:false}); }
+function orderId(){ return "ORD-" + Math.floor(100000+Math.random()*899999); }
+
+function genTransaction(){
+  const region = pick(REGIONS);
+  const category = pick(CATEGORIES);
+  const amount = Math.floor(rand(18, 480));
+  const statusRoll = Math.random();
+  const status = statusRoll < 0.78 ? "Fulfilled" : statusRoll < 0.93 ? "Pending" : "Failed";
+  return {
+    id: orderId(),
+    region: region.name,
+    color: region.color,
+    category,
+    amount,
+    status,
+    time: new Date()
+  };
+}
+
+/* ============ CHARTS ============ */
+Chart.defaults.color = "#7c879c";
+Chart.defaults.font.family = "Inter";
+Chart.defaults.borderColor = "#222837";
+
+const revenueCtx = document.getElementById('revenueChart');
+const revenueChart = new Chart(revenueCtx, {
+  type:'line',
+  data:{
+    labels: revenueLabels,
+    datasets:[{
+      data: revenueHistory,
+      borderColor:'#33d9b2',
+      backgroundColor:'rgba(51,217,178,0.12)',
+      borderWidth:2,
+      fill:true,
+      tension:0.35,
+      pointRadius:0,
+      pointHoverRadius:4,
+    }]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    animation:{duration:300},
+    plugins:{ legend:{display:false}, tooltip:{callbacks:{ label: ctx => fmtMoney(ctx.parsed.y) } } },
+    scales:{
+      x:{ display:false },
+      y:{ grid:{color:'#1a202c'}, ticks:{ callback:v=>'$'+v } }
+    }
+  }
+});
+
+const regionCtx = document.getElementById('regionChart');
+const regionChart = new Chart(regionCtx, {
+  type:'doughnut',
+  data:{
+    labels: REGIONS.map(r=>r.name),
+    datasets:[{
+      data: REGIONS.map(r=>regionCounts[r.name]),
+      backgroundColor: REGIONS.map(r=>r.color),
+      borderColor: "#11151d",
+      borderWidth:3,
+    }]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    cutout:'68%',
+    plugins:{ legend:{display:false} }
+  }
+});
+document.getElementById('regionLegend').innerHTML = REGIONS.map(r=>
+  `<div class="legend-chip"><span class="dot" style="background:${r.color}"></span>${r.name}</div>`
+).join('');
+
+const categoryCtx = document.getElementById('categoryChart');
+const categoryChart = new Chart(categoryCtx, {
+  type:'bar',
+  data:{
+    labels: CATEGORIES,
+    datasets:[{
+      data: CATEGORIES.map(c=>categoryCounts[c]),
+      backgroundColor: '#9d8cff',
+      borderRadius:5,
+      maxBarThickness:28,
+    }]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{display:false} },
+    scales:{
+      x:{ grid:{display:false}, ticks:{font:{size:10}} },
+      y:{ grid:{color:'#1a202c'} }
+    }
+  }
+});
+
+const statusCtx = document.getElementById('statusChart');
+const statusChart = new Chart(statusCtx, {
+  type:'doughnut',
+  data:{
+    labels: STATUS,
+    datasets:[{
+      data: STATUS.map(s=>statusCounts[s]),
+      backgroundColor: ['#33d9b2','#ffb454','#ff5c6c'],
+      borderColor:"#11151d",
+      borderWidth:3,
+    }]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    cutout:'62%',
+    plugins:{ legend:{ position:'bottom', labels:{boxWidth:10, font:{size:11}} } }
+  }
+});
+
+/* ============ TICKER ============ */
+function buildTickerItems(n){
+  let html = '';
+  for(let i=0;i<n;i++){
+    const t = genTransaction();
+    const cls = t.status === 'Failed' ? 'down' : 'up';
+    const sign = t.status === 'Failed' ? '✕' : '✓';
+    html += `<span class="tick-item"><span class="id">${t.id}</span><span class="amt ${cls}">${sign} ${fmtMoney(t.amount)}</span><span>${t.category} · ${t.region}</span></span>`;
+  }
+  return html;
+}
+const tickerTrack = document.getElementById('tickerTrack');
+const seed = buildTickerItems(16);
+tickerTrack.innerHTML = seed + seed; // duplicate for seamless loop
+
+/* ============ REPORT TABLE ============ */
+function renderReport(){
+  document.getElementById('reportBody').innerHTML = reportRows.slice(0,8).map(t=>{
+    const badgeClass = t.status === 'Fulfilled' ? 'ok' : t.status === 'Pending' ? 'pend' : 'fail';
+    return `<tr>
+      <td class="mono">${t.id}</td>
+      <td>${t.region}</td>
+      <td>${t.category}</td>
+      <td class="mono">${fmtMoney(t.amount)}</td>
+      <td><span class="badge ${badgeClass}">${t.status}</span></td>
+      <td class="mono">${fmtTime(t.time)}</td>
+    </tr>`;
+  }).join('');
+}
+
+/* ============ STATS ============ */
+function renderStats(){
+  document.getElementById('statRevenue').textContent = fmtMoney(totalRevenue);
+  document.getElementById('statOrders').textContent = totalOrders.toLocaleString();
+  const aov = totalRevenue / Math.max(totalOrders,1);
+  document.getElementById('statAov').textContent = fmtMoney(aov);
+  document.getElementById('statConv').textContent = conv.toFixed(1) + '%';
+
+  const revDelta = ((totalRevenue - prevRevenue)/Math.max(prevRevenue,1))*100;
+  const ordDelta = ((totalOrders - prevOrders)/Math.max(prevOrders,1))*100;
+  document.getElementById('statRevenueDelta').textContent = (revDelta>=0?'+':'') + revDelta.toFixed(2) + '% vs last tick';
+  document.getElementById('statOrdersDelta').textContent = (ordDelta>=0?'+':'') + ordDelta.toFixed(2) + '% vs last tick';
+  document.getElementById('statAovDelta').textContent = 'stable session avg';
+  document.getElementById('statAovDelta').className = 'stat-delta';
+  document.getElementById('statAovDelta').style.color = '#7c879c';
+  const convDelta = (Math.random()-0.6)*0.4;
+  conv = Math.max(1.5, conv + convDelta);
+  document.getElementById('statConvDelta').textContent = (convDelta>=0?'+':'') + convDelta.toFixed(2) + 'pp';
+  document.getElementById('statConvDelta').className = 'stat-delta ' + (convDelta>=0?'up':'down');
+}
+
+/* ============ TICK LOOP ============ */
+function tick(){
+  prevRevenue = totalRevenue;
+  prevOrders = totalOrders;
+
+  // generate 1-3 new transactions this tick
+  const newCount = 1 + Math.floor(Math.random()*3);
+  for(let i=0;i<newCount;i++){
+    const t = genTransaction();
+    totalRevenue += t.amount;
+    totalOrders += 1;
+    categoryCounts[t.category] += 1;
+    regionCounts[t.region] += 1;
+    statusCounts[t.status] += 1;
+    reportRows.unshift(t);
+    allTransactions.unshift(t);
+  }
+  reportRows = reportRows.slice(0,8);
+  allTransactions = allTransactions.slice(0,500);
+
+  // revenue history rolling window
+  const lastVal = revenueHistory[revenueHistory.length-1];
+  const next = Math.max(400, lastVal + rand(-180,220));
+  revenueHistory.push(next);
+  revenueHistory.shift();
+  revenueLabels.push(revenueLabels[revenueLabels.length-1]+1);
+  revenueLabels.shift();
+
+  revenueChart.data.labels = revenueLabels;
+  revenueChart.data.datasets[0].data = revenueHistory;
+  revenueChart.update('none');
+
+  regionChart.data.datasets[0].data = REGIONS.map(r=>regionCounts[r.name]);
+  regionChart.update('none');
+
+  categoryChart.data.datasets[0].data = CATEGORIES.map(c=>categoryCounts[c]);
+  categoryChart.update('none');
+
+  statusChart.data.datasets[0].data = STATUS.map(s=>statusCounts[s]);
+  statusChart.update('none');
+
+  renderStats();
+  renderReport();
+}
+
+// initial report fill
+for(let i=0;i<8;i++){ reportRows.push(genTransaction()); }
+allTransactions = [...reportRows];
+renderStats();
+renderReport();
+setInterval(tick, 2000);
+
+/* ============ CLOCK ============ */
+function updateClock(){
+  document.getElementById('clockTxt').textContent = fmtTime(new Date());
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+/* ============ EXPORT ============ */
+function downloadFile(filename, content, mime){
+  const blob = new Blob([content], {type:mime});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+document.getElementById('exportCsv').addEventListener('click', ()=>{
+  const header = "Order ID,Region,Category,Amount,Status,Time\n";
+  const rows = allTransactions.map(t =>
+    `${t.id},${t.region},${t.category},${t.amount},${t.status},${t.time.toISOString()}`
+  ).join("\n");
+  downloadFile(`pulse_export_${Date.now()}.csv`, header + rows, "text/csv");
+});
+
+document.getElementById('exportJson').addEventListener('click', ()=>{
+  const payload = {
+    generatedAt: new Date().toISOString(),
+    summary:{ totalRevenue, totalOrders, averageOrderValue: totalRevenue/Math.max(totalOrders,1), conversionRate: conv },
+    categoryCounts, regionCounts, statusCounts,
+    transactions: allTransactions
+  };
+  downloadFile(`pulse_export_${Date.now()}.json`, JSON.stringify(payload, null, 2), "application/json");
+});
+</script>
+</body>
+</html>
