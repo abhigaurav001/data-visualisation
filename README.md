@@ -26,9 +26,8 @@ data-visualisation/
 │── README.md
 ```
 
-## 📸 Screenshot
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/d0b17158-7a77-4223-bdde-87deedff5990" />
 
-(Add your project screenshot here)
 
 ## ▶️ How to Run
 
